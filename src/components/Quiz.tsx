@@ -45,28 +45,21 @@ export const Quiz = () => {
       setIsTyping(true);
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      addMessage("Olá, seja bem vindo", true);
+      addMessage("Olá, seja bem vindo sou atendente virtual e irei te adicionar no grupo do CF!", true);
       setIsTyping(false);
       
       await new Promise(resolve => setTimeout(resolve, 1000));
       setIsTyping(true);
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      addMessage("Sou atendente virtual da Redshark e vou iniciar seu atendimento...", true);
+      addMessage("Antes, responda a pergunta abaixo:", true);
       setIsTyping(false);
-
+      
       await new Promise(resolve => setTimeout(resolve, 1000));
       setIsTyping(true);
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      addMessage("Antes de iniciar, me conta mais sobre o que procura...", true);
-      setIsTyping(false);
-
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setIsTyping(true);
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      addMessage("Você utiliza ergogênico hoje?", true);
+      addMessage("Você ja frequenta a academia?", true);
       setIsTyping(false);
       setShowButtons(true);
     };
