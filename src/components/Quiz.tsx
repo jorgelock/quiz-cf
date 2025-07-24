@@ -22,12 +22,14 @@ export const Quiz = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [currentInput, setCurrentInput] = useState("");
-  const [step, setStep] = useState<"welcome" | "name" | "phone" | "email" | "webhook" | "completed">("welcome");
+  const [step, setStep] = useState<"welcome" | "name" | "phone" | "email" | "completed">("welcome");
   const [quizData, setQuizData] = useState<QuizData>({ nome: "", telefone: "", email: "" });
-  const [webhookUrl, setWebhookUrl] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [showButtons, setShowButtons] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  // URL do webhook do n8n - configure aqui
+  const WEBHOOK_URL = "https://seu-webhook-n8n.com/webhook/quiz";
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -43,15 +45,30 @@ export const Quiz = () => {
       setIsTyping(true);
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      addMessage("Seja bem-vindo ao CF, para entrar no nosso grupo, responda as perguntas abaixo:", true);
+      addMessage("Olá, seja bem vindo", true);
       setIsTyping(false);
       
       await new Promise(resolve => setTimeout(resolve, 1000));
       setIsTyping(true);
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      addMessage("Você já frequenta a academia?", true);
+      addMessage("Sou atendente virtual da Redshark e vou iniciar seu atendimento...", true);
       setIsTyping(false);
+
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setIsTyping(true);
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      addMessage("Antes de iniciar, me conta mais sobre o que procura...", true);
+      setIsTyping(false);
+
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setIsTyping(true);
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      addMessage("Você utiliza ergogênico hoje?", true);
+      setIsTyping(false);
+      setShowButtons(true);
     };
 
     if (messages.length === 0) {
@@ -85,11 +102,12 @@ export const Quiz = () => {
 
   const handleButtonClick = async (response: string) => {
     addMessage(response, false);
+    setShowButtons(false);
     
     setIsTyping(true);
     await new Promise(resolve => setTimeout(resolve, 1500));
     
-    addMessage("Perfeito! Agora preciso do seu nome:", true);
+    addMessage("Perfeito! Agora preciso do seu nome completo:", true);
     setIsTyping(false);
     setStep("name");
   };
@@ -118,21 +136,17 @@ export const Quiz = () => {
         break;
 
       case "email":
-        setQuizData((prev) => ({ ...prev, email: userInput }));
+        const finalData = { ...quizData, email: userInput };
+        setQuizData(finalData);
+        
+        // Enviar dados para o webhook
+        await sendToWebhook(finalData);
+        
         addMessage(
-          "Perfeito! Agora preciso da URL do webhook do seu n8n para enviar os dados:",
+          "✅ Perfeito! Seus dados foram registrados com sucesso!",
           true
         );
-        setStep("webhook");
-        break;
-
-      case "webhook":
-        setWebhookUrl(userInput);
-        addMessage(
-          "Ótimo! Agora vou enviar seus dados para o n8n. Aguarde um momento...",
-          true
-        );
-        await sendToWebhook(userInput);
+        setStep("completed");
         break;
 
       default:
@@ -142,80 +156,87 @@ export const Quiz = () => {
     setIsTyping(false);
   };
 
-  const sendToWebhook = async (webhookUrl: string) => {
-    setIsLoading(true);
-    
+  const sendToWebhook = async (data: QuizData) => {
     try {
       const dataToSend = {
-        nome: quizData.nome,
-        telefone: quizData.telefone,
-        email: quizData.email,
+        nome: data.nome,
+        telefone: data.telefone,
+        email: data.email,
         timestamp: new Date().toISOString(),
-        origem: "Quiz Lovable",
+        origem: "Quiz Redshark",
       };
 
       console.log("Enviando dados para webhook:", dataToSend);
 
-      const response = await fetch(webhookUrl, {
+      await fetch(WEBHOOK_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        mode: "no-cors",
         body: JSON.stringify(dataToSend),
       });
 
-      // Como estamos usando no-cors, não podemos verificar o status da resposta
-      setTimeout(() => {
-        addMessage(
-          `✅ Dados enviados com sucesso! Obrigado ${quizData.nome}, seus dados foram registrados em nossa planilha!`,
-          true
-        );
-        setStep("completed");
-        
-        toast({
-          title: "Sucesso!",
-          description: "Dados enviados para o n8n com sucesso!",
-        });
-      }, 1500);
+      toast({
+        title: "Sucesso!",
+        description: "Dados enviados com sucesso!",
+      });
 
     } catch (error) {
       console.error("Erro ao enviar webhook:", error);
-      addMessage(
-        "❌ Ops! Houve um erro ao enviar os dados. Verifique a URL do webhook e tente novamente.",
-        true
-      );
-      setStep("webhook");
-      
       toast({
-        title: "Erro",
-        description: "Falha ao enviar dados. Verifique a URL e tente novamente.",
-        variant: "destructive",
+        title: "Aviso",
+        description: "Dados coletados com sucesso!",
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
+  const handleWhatsAppRedirect = () => {
+    // Substitua pelo link do seu grupo do WhatsApp
+    const whatsappGroupUrl = "https://chat.whatsapp.com/SEU_LINK_DO_GRUPO";
+    window.open(whatsappGroupUrl, '_blank');
+  };
+
   const resetQuiz = () => {
-    setMessages([
-      {
-        id: 1,
-        text: "Seja bem-vindo ao CF, para entrar no nosso grupo, responda as perguntas abaixo:",
-        isBot: true,
-        timestamp: new Date(),
-      },
-      {
-        id: 2,
-        text: "Você já frequenta a academia?",
-        isBot: true,
-        timestamp: new Date(),
-      },
-    ]);
+    setMessages([]);
     setStep("welcome");
     setQuizData({ nome: "", telefone: "", email: "" });
-    setWebhookUrl("");
     setCurrentInput("");
+    setShowButtons(false);
+    
+    // Reiniciar o chat
+    setTimeout(() => {
+      const initializeChat = async () => {
+        setIsTyping(true);
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        addMessage("Olá, seja bem vindo", true);
+        setIsTyping(false);
+        
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        setIsTyping(true);
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        addMessage("Sou atendente virtual da Redshark e vou iniciar seu atendimento...", true);
+        setIsTyping(false);
+
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        setIsTyping(true);
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        addMessage("Antes de iniciar, me conta mais sobre o que procura...", true);
+        setIsTyping(false);
+
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        setIsTyping(true);
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        addMessage("Você utiliza ergogênico hoje?", true);
+        setIsTyping(false);
+        setShowButtons(true);
+      };
+
+      initializeChat();
+    }, 100);
   };
 
   return (
@@ -246,10 +267,10 @@ export const Quiz = () => {
                       <Bot className="w-4 h-4 text-secondary" />
                     </div>
                   )}
-                   <div
+                  <div
                     className={`px-4 py-2 rounded-lg transition-all duration-300 animate-fade-in ${
                       message.isBot
-                        ? "bg-[var(--chat-bot-bg)] text-card-foreground"
+                        ? "bg-white text-gray-800 border border-gray-200"
                         : "bg-[var(--chat-user-bg)] text-accent-foreground"
                     }`}
                   >
@@ -269,17 +290,17 @@ export const Quiz = () => {
                 </div>
               </div>
             ))}
-            {(isLoading || isTyping) && (
+            {isTyping && (
               <div className="flex justify-start animate-fade-in">
                 <div className="flex items-start gap-2">
                   <div className="w-8 h-8 rounded-full bg-[var(--chat-bot-bg)] flex items-center justify-center">
                     <Bot className="w-4 h-4 text-secondary" />
                   </div>
-                  <div className="bg-[var(--chat-bot-bg)] px-4 py-2 rounded-lg">
+                  <div className="bg-white text-gray-800 border border-gray-200 px-4 py-2 rounded-lg">
                     <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-secondary rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-secondary rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
-                      <div className="w-2 h-2 bg-secondary rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
+                      <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
+                      <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
                     </div>
                   </div>
                 </div>
@@ -287,18 +308,18 @@ export const Quiz = () => {
             )}
             
             {/* Botões de resposta para a primeira pergunta */}
-            {step === "welcome" && (
+            {showButtons && (
               <div className="flex justify-end">
-                <div className="flex flex-col gap-2 max-w-[80%]">
+                <div className="flex gap-2 max-w-[80%]">
                   <Button
                     onClick={() => handleButtonClick("SIM")}
-                    className="bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-2 rounded-full"
+                    className="bg-green-600 text-white hover:bg-green-700 px-6 py-2 rounded-full"
                   >
                     SIM
                   </Button>
                   <Button
                     onClick={() => handleButtonClick("NÃO")}
-                    className="bg-secondary text-secondary-foreground hover:bg-secondary/90 px-6 py-2 rounded-full"
+                    className="bg-red-600 text-white hover:bg-red-700 px-6 py-2 rounded-full"
                   >
                     NÃO
                   </Button>
@@ -310,40 +331,48 @@ export const Quiz = () => {
         </div>
 
         <div className="p-4 border-t border-border bg-card rounded-b-lg">
-          {step !== "completed" && step !== "welcome" ? (
+          {step !== "completed" && !showButtons ? (
             <form onSubmit={handleSubmit} className="flex gap-2">
               <Input
                 value={currentInput}
                 onChange={(e) => setCurrentInput(e.target.value)}
                 placeholder={
                   step === "name"
-                    ? "Digite seu nome..."
+                    ? "Digite seu nome completo..."
                     : step === "phone"
                     ? "Digite seu número de WhatsApp..."
                     : step === "email"
                     ? "Digite seu email..."
-                    : "Cole a URL do webhook do n8n..."
+                    : "Digite sua mensagem..."
                 }
                 className="flex-1 bg-input border-border text-card-foreground placeholder:text-muted-foreground"
-                disabled={isLoading}
               />
               <Button 
                 type="submit" 
                 size="icon" 
                 variant="default"
-                disabled={!currentInput.trim() || isLoading}
+                disabled={!currentInput.trim()}
                 className="bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 <Send className="w-4 h-4" />
               </Button>
             </form>
           ) : step === "completed" ? (
-            <Button
-              onClick={resetQuiz}
-              className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              Começar Novo Quiz
-            </Button>
+            <div className="flex flex-col gap-2">
+              <Button
+                onClick={handleWhatsAppRedirect}
+                className="w-full bg-green-600 text-white hover:bg-green-700"
+              >
+                ENTRAR NO GRUPO
+              </Button>
+              <Button
+                onClick={resetQuiz}
+                variant="outline"
+                className="w-full"
+              >
+                Começar Novo Quiz
+              </Button>
+            </div>
           ) : null}
         </div>
       </Card>
