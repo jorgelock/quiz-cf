@@ -29,7 +29,7 @@ export const Quiz = () => {
   const { toast } = useToast();
 
   // URL do webhook do n8n
-  const WEBHOOK_URL = "https://n8n.lockpainel.shop/webhook-test/quiz";
+  const WEBHOOK_URL = "https://n8n.lockpainel.shop/webhook/quiz";
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
