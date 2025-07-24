@@ -28,8 +28,8 @@ export const Quiz = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  // URL do webhook do n8n - configure aqui
-  const WEBHOOK_URL = "https://seu-webhook-n8n.com/webhook/quiz";
+  // URL do webhook do n8n
+  const WEBHOOK_URL = "https://n8n.lockpainel.shop/webhook-test/quiz";
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -364,13 +364,6 @@ export const Quiz = () => {
                 className="w-full bg-green-600 text-white hover:bg-green-700"
               >
                 ENTRAR NO GRUPO
-              </Button>
-              <Button
-                onClick={resetQuiz}
-                variant="outline"
-                className="w-full"
-              >
-                Começar Novo Quiz
               </Button>
             </div>
           ) : null}
